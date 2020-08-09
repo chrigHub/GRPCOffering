@@ -40,19 +40,21 @@ public class OfferingDiscountClient {
     public List<GRPCItem> getDiscount(List<GRPCItem> list){
         System.out.println("Offering Client starts sending!");
         List<OfferingDiscountItem> itemList = Util.GRPCItemToOfferingDiscountItem(list);
-        this.channel = initChannel();
-        OfferingDiscountServiceGrpc.OfferingDiscountServiceBlockingStub stub = OfferingDiscountServiceGrpc.newBlockingStub(channel);
+        ManagedChannel mc = ManagedChannelBuilder.forAddress("localhost", 9093)
+                .usePlaintext()
+                .build();
+        OfferingDiscountServiceGrpc.OfferingDiscountServiceBlockingStub stub = OfferingDiscountServiceGrpc.newBlockingStub(mc);
         OfferingRequest offeringRequest = OfferingRequest.newBuilder()
                 .addAllTransferItems(itemList)
                 .build();
         DiscountResponse discountResponse = stub.getDiscount(offeringRequest);
-        channel.shutdown();
+        mc.shutdown();
         return Util.OfferingDiscountItemToGRPCItem(discountResponse.getTransferItemsList());
     }
 
     public void syncDB(String itemLabel){
         System.out.println("Removing " + itemLabel + " from Discount becuase of sync!");
-        this.channel = initChannel();
+        channel = initChannel();
         OfferingDiscountServiceGrpc.OfferingDiscountServiceStub stub = OfferingDiscountServiceGrpc.newStub(channel);
         Sync sync = Sync.newBuilder()
                 .setItemLabel(itemLabel)
